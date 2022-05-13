@@ -3,25 +3,13 @@
 [![All Contributors](https://img.shields.io/badge/all_contributors-4-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
-*A The Turing Way inspired project to enable reproducibility in data science.*
+## About
 
-## About this Repository
+DyME-CHH (DyME - Climate, Heat and Health) is a project at the Alan Turing Institute, building upon models and tools developed as part of previous work in the AI for Science and Government (ASG) programme. 
 
-This is a template for setting-up a research or data science project online, such as on GitHub.
-This repository includes files and directories recommended for enabling reproducibility and collaboration in a project, as well as sharing of research objects.
+Our interaction with the natural environment plays a crucial role in all aspects of society: our health, wealth, safety and future prosperity. Climate change will bring fundamental changes to our environment that have the potential to pose significant threats to people’s health. Estimating the risks associated with higher temperatures in epidemiological studies and exposures used in health impact analyses are almost exclusively based on aggregate measures of heat (e.g. averages of measurements in an urban area or of model outputs) with the assumption that all members of the population experience the same temperatures. In reality, different members of the population will spend different amounts of time in different locations, i.e. outdoors and indoors in different types of building stock. The ability to produce high quality, disaggregated information on heat exposures experienced by different population groups would provide a step-change in our understanding of the adverse health effects associated with higher temperatures and the ability to generate information on the exposures experienced by different population groups will be essential in developing adaptation measures that ensure that everyone will have homes, and access to locations, that provide cooler, healthier, temperatures in times of extreme heat. 
 
-This repository follows the recommendations and guidance provided in *[The Turing Way](https://the-turing-way.netlify.app/welcome)* handbook to data science.
-When reusing this repository, please update information on your README page with information about your project.
-
-<!--If reusing this repository, delete this section -->
-## About README
-
-On an online repository, such as GitHub, the project overview page is named ‘README’ which is equivalent to the main page of a website.
-README page should describe the project -- what is the purpose of the project, who is involved, how to collaborate and where to find key resources.
-
-To learn more about how to create a README.md file, please read the [Landing Page - README File](https://the-turing-way.netlify.app/project-design/project-repo/project-repo-readme.html) chapter in The Turing Way Guide for Project Design.
-
-<!--If reusing this repository, delete this section -->
+This project will create an impact case study on urban heat and health, connecting a climate modelling and projections tool with policymakers at local authorities in the United Kingdom. 
 
 ## Repo Structure
 
@@ -72,31 +60,11 @@ This repository is jointly developed and maintained by Open Research Community B
 
 🎯 Roadmap
 ---
-
-### Logistics before starting the project
-
-- [x] Add a README file
-- [x] Add a [CONTRIBUTING](CONTRIBUTING.md) file
-- [x] Add a [LICENSE](LICENSE.md)
-- [x] Add a [Code of Conduct](CODE_OF_CONDUCT.md)
-- [x] Install [all-contributors](https://allcontributors.org/) bot
-- [ ] .gitignore file (choose from a template)
-- [ ] Issue templates
-    - [ ] Optionally Install [Welcome/behavior](https://github.com/behaviorbot/welcome) bot (see The Turing Way [config](https://github.com/alan-turing-institute/the-turing-way/blob/main/.github/config.yml))
-- [ ] Create a directory with files for project management (meetings, report, proposals)
-- [ ] Create a directory with files for communications
-- [ ] Create a directory for research analysis
-- [ ] Create a directory for research results/outcome to share (?)
-- [ ] Create a directory for ethics approval and project policies
-- [ ] Create a directory with files for stakeholders info and nature of engagement
-- [ ] Connect repo with Zenodo
-- [ ] Add cff file for citation
-- [ ] Add badges
+TBD.
 
 📫 Contact
 ---
-
-For any organisation related queries or concerns, you can directly reach out to Malvika Sharan by emailing [msharan@turing.ac.uk](mailto:msharan@turing.ac.uk).
+TBD.
 
 ♻️ License
 ---
@@ -116,10 +84,9 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
 <!-- markdownlint-disable -->
 <table>
   <tr>
-    <td align="center"><a href="http://malvikasharan.github.io/"><img src="https://avatars.githubusercontent.com/u/5370471?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Malvika Sharan</b></sub></a><br /><a href="#ideas-malvikasharan" title="Ideas, Planning, & Feedback">🤔</a> <a href="#content-malvikasharan" title="Content">🖋</a></td>
-    <td align="center"><a href="https://github.com/EKaroune"><img src="https://avatars.githubusercontent.com/u/58147174?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Emma Karoune</b></sub></a><br /><a href="#ideas-EKaroune" title="Ideas, Planning, & Feedback">🤔</a> <a href="https://github.com/alan-turing-institute/reproducible-project-template/commits?author=EKaroune" title="Documentation">📖</a></td>
-    <td align="center"><a href="http://www.aleesteele.com"><img src="https://avatars.githubusercontent.com/u/18509789?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Anne Lee Steele</b></sub></a><br /><a href="#ideas-aleesteele" title="Ideas, Planning, & Feedback">🤔</a> <a href="https://github.com/alan-turing-institute/reproducible-project-template/commits?author=aleesteele" title="Documentation">📖</a></td>
-    <td align="center"><a href="https://github.com/vhellon"><img src="https://avatars.githubusercontent.com/u/93144591?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Vicky Hellon</b></sub></a><br /><a href="#ideas-vhellon" title="Ideas, Planning, & Feedback">🤔</a> <a href="https://github.com/alan-turing-institute/reproducible-project-template/commits?author=vhellon" title="Documentation">📖</a></td>
+    <td align="center"><a href="http://malvikasharan.github.io/"><img src="https://avatars.githubusercontent.com/u/5370471?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Malvika Sharan</b></sub></a><br /><a href="#ideas-malvikasharan" title="Ideas, Planning, & Feedback">🤔</a> <a href="#content-malvikasharan" title="Health Modelling">📖</a></td>
+    <td align="center"><a href="https://github.com/mfbenitezp"><img src="https://avatars.githubusercontent.com/u/4097295?v=4" width="100px;" alt=""/><br /><sub><b>Fernando Benitez</b></sub></a><br /><a href="#ideas-mfbenitezp" title="Turing Urban Analytics research associate">>🌎</a> <a href="https://github.com/alan-turing-institute/dymechh/commits?author=mfbenitezp" title="Microsimulation Modelling">📖</a></td>
+    <td align="center"><a href="https://github.com/dingaaling"><img src="https://avatars.githubusercontent.com/u/5104098?s=400&u=f4f7cfa6574dc65182415a1b93363a6d2bcab63b&v=4" width="100px;" alt=""/><br /><sub><b>Jennifer Ding</b></sub></a><br /><a href="#ideas-dingaaling" title="Turing Research Application Manager">🐏</a> <a href="https://github.com/alan-turing-institute/dymechh/commits?author=dingaaling" title="Documentation">📖</a></td>
   </tr>
 </table>
 
