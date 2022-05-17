@@ -84,8 +84,8 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
 <!-- markdownlint-disable -->
 <table>
   <tr>
-    <td align="center"><a href="http://malvikasharan.github.io/"><img src="https://avatars.githubusercontent.com/u/5370471?v=4?s=100" width="100px;" alt=""/><br /><sub><b>Malvika Sharan</b></sub></a><br /><a href="#ideas-malvikasharan" title="Ideas, Planning, & Feedback">🤔</a> <a href="#content-malvikasharan" title="Health Modelling">📖</a></td>
-    <td align="center"><a href="https://github.com/mfbenitezp"><img src="https://avatars.githubusercontent.com/u/4097295?v=4" width="100px;" alt=""/><br /><sub><b>Fernando Benitez</b></sub></a><br /><a href="#ideas-mfbenitezp" title="Turing Urban Analytics research associate">>🌎</a> <a href="https://github.com/alan-turing-institute/dymechh/commits?author=mfbenitezp" title="Microsimulation Modelling">📖</a></td>
+    <td align="center"><a href="https://github.com/RuthBowyer"><img src="https://avatars.githubusercontent.com/u/105492883?v=4" width="100px;" alt=""/><br /><sub><b>Ruth Bowyer</b></sub></a><br /><a href="#ideas-ruth-bowyer" title="Turing ASG research associate">🐮</a> <a href="#content-ruthbowyer" title="Health Modelling">📖</a></td>
+    <td align="center"><a href="https://github.com/mfbenitezp"><img src="https://avatars.githubusercontent.com/u/4097295?v=4" width="100px;" alt=""/><br /><sub><b>Fernando Benitez</b></sub></a><br /><a href="#ideas-mfbenitezp" title="Turing ASG research associate">>🌎</a> <a href="https://github.com/alan-turing-institute/dymechh/commits?author=mfbenitezp" title="Urban Microsimulation Modelling">📖</a></td>
     <td align="center"><a href="https://github.com/dingaaling"><img src="https://avatars.githubusercontent.com/u/5104098?s=400&u=f4f7cfa6574dc65182415a1b93363a6d2bcab63b&v=4" width="100px;" alt=""/><br /><sub><b>Jennifer Ding</b></sub></a><br /><a href="#ideas-dingaaling" title="Turing Research Application Manager">🐏</a> <a href="https://github.com/alan-turing-institute/dymechh/commits?author=dingaaling" title="Documentation">📖</a></td>
   </tr>
 </table>
