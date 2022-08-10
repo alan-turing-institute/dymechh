@@ -1,16 +1,16 @@
 Downloading HADs data
 ================
-2022-08-09
+Last updated: 2022-08-10
 
 ## Background
 
-The Centre for Environmental Data Analysis (CEDA) provides access to the
+The [Centre for Environmental Data Analysis (CEDA)](ceda.ac.uk) provides access to the
 HadUK-Grid: climate observations from the UK network of meterological
 stations that have been interpolated to a uniform 1km x 1km grid:
 <https://catalogue.ceda.ac.uk/uuid/4dc8450d889a491ebb20e724debe2dfb>
 
-The data is useful for applying bias adjustment methods to climate
-projections. However, downloading the data is not immediately
+This data is useful for applying bias adjustment methods to recalibrate climate
+projection datasets. However, downloading the data is not immediately
 straightforward, as `wget` does not work for this data. It can be done
 however using a looped curl command, with the process detailed below for
 downloading to an Azure virtual machine (Linux OS - Ubuntu 20.04)
@@ -18,11 +18,10 @@ downloading to an Azure virtual machine (Linux OS - Ubuntu 20.04)
 ## 1. Get credentials
 
 To access the data, first you need to create an account on the CEDA
-website. More details as to why are here:
-<https://help.ceda.ac.uk/article/4442-ceda-opendap-scripted-interactions>
+website. More details as to why can be found [here](https://help.ceda.ac.uk/article/4442-ceda-opendap-scripted-interactions).
 
 The walkthrough provided offers a useful guide, however we found a
-slight change to their suggested approach worked for us
+slight change to their suggested approach worked for us.
 
 First install `Online CA Client` and `ContrailOnline` with docs here:
 <https://github.com/cedadev/online_ca_client>
