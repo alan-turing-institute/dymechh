@@ -23,10 +23,9 @@ website. More details as to why can be found [here](https://help.ceda.ac.uk/arti
 The walkthrough provided offers a useful guide, however we found a
 slight change to their suggested approach worked for us.
 
-First install `Online CA Client` and `ContrailOnline` with docs here:
-<https://github.com/cedadev/online_ca_client>
+First install `Online CA Client` and `ContrailOnline` following the installation instructions [here](https://github.com/cedadev/online_ca_client):
 
-We used the python command line client
+We installed using pip on the command line:
 
 ``` bash
 pip install ContrailOnlineCAClient
@@ -48,13 +47,10 @@ Replace `username` below with your CEDA username
 online-ca-client get_cert -s https://slcs.ceda.ac.uk/onlineca/certificate/ -l username -c ./ca-trustroots/ -o ./cred.pem
 ```
 
-## 2. Create a list of file names
+## 2. [Optional] Create a list of file names from which to download files
 
-Navigate to the HADUK data and find the URLs of the files you’d like to
-download.
-
-One way of doing this is to copy and paste the URLs from a the html
-index, and clean them up in R, e.g
+One way of downloading all the HADUK files is to copy and paste the URLs from the [html
+index](https://dap.ceda.ac.uk/badc/ukmo-hadobs/data/insitu/MOHC/HadOBS/HadUK-Grid/v1.1.0.0/1km/tasmax/day/v20220310/), and clean them up in R, e.g
 
 ``` r
 filenames <- read.table("tasmaxurls.txt") #text file of the names of the .nc files to be downloaded, in this case from here: https://dap.ceda.ac.uk/badc/ukmo-hadobs/data/insitu/MOHC/HadOBS/HadUK-Grid/v1.1.0.0/1km/tasmax/day/v20220310/
@@ -64,11 +60,16 @@ fn <- paste0("https://data.ceda.ac.uk/badc/ukmo-hadobs/data/insitu/MOHC/HadOBS/H
 write.table(fn, "tasmax.urls.txt",row.names = F, col.names = F, quote=F)
 ```
 
-## 3. Curl the files
+## 3. Download the files using curl
 
 Because `wget` does not work for the files, use xargs to curl all of the
 files in the .txt file
 
 ``` bash
 xargs -n 1 curl --cert cred.pem -L -c /dev/null  -O < tasmax.urls.txt
+```
+In order to download a single file use the following format, replacing <filename> with your file:
+
+``` bash
+curl --cert cred.pem -L -c /dev/null  -O https://data.ceda.ac.uk/badc/ukmo-hadobs/data/insitu/MOHC/HadOBS/HadUK-Grid/v1.1.0.0/1km/tasmax/day/v20220310/<filename>
 ```
