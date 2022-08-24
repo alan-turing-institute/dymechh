@@ -1,0 +1,2 @@
+https://data.ceda.ac.uk/badc/ukmo-hadobs/data/insitu/MOHC/HadOBS/HadUK-Grid/v1.1.0.0/1km/tasmax/day/v20220310/tasmax_hadukgrid_uk_1km_day_19600101-19600131.nc
+https://data.ceda.ac.uk/badc/ukmo-hadobs/data/insitu/MOHC/HadOBS/HadUK-Grid/v1.1.0.0/1km/tasmax/day/v20220310/tasmax_hadukgrid_uk_1km_day_19600201-19600229.nc
