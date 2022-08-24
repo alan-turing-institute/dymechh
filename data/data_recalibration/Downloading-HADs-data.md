@@ -60,6 +60,8 @@ fn <- paste0("https://data.ceda.ac.uk/badc/ukmo-hadobs/data/insitu/MOHC/HadOBS/H
 write.table(fn, "tasmax.urls.txt",row.names = F, col.names = F, quote=F)
 ```
 
+An example `tasmax.urls.txt` is provided in the repo.
+
 ## 3. Download the files using curl
 
 Because `wget` does not work for the files, use xargs to curl all of the
