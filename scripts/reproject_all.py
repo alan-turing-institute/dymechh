@@ -18,7 +18,9 @@ from tqdm import tqdm
 from os.path import basename
 
 
-def reproj_to_geotif(f, out_dir, delete_interm=True):
+def reproj_to_geotif(x):
+    f = x[0]
+    out_dir = x[1]
     ncfile = xr.open_dataset(f).drop_dims("bnds").squeeze()
     ncfile = ncfile.rio.set_spatial_dims('grid_longitude', 'grid_latitude')
     ncfile.rio.write_crs("EPSG:4326", inplace=True)
@@ -32,7 +34,9 @@ def reproj_to_geotif(f, out_dir, delete_interm=True):
 if __name__ == "__main__":
 
     # find all nc files
-    files = glob("f{argv[0]}/**/*.nc",recursive=True)
+    files = glob(f"{args[1]}/*.nc",recursive=True)
     N = len(files)
+    args = [ [f,args[2]] for f in files ]
+    print(files)
     with multiprocessing.Pool(processes=cpu_count()-1) as pool:
         res = list(tqdm(pool.imap_unordered(reproj_to_geotif, args), total=N))
