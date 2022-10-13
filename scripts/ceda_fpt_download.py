@@ -6,7 +6,7 @@ from pathlib import Path
 import argparse
 
 
-def download_ftp(input, output, username, password):
+def download_ftp(input, output, username, password, reverse):
     """
     Function to connect to the CEDA archive and download data.
 
@@ -20,6 +20,8 @@ def download_ftp(input, output, username, password):
         CEDA registered username
     password: str
         CEDA FPT password (obtained as explained in https://help.ceda.ac.uk/article/280-ftp)
+    reverse: bool
+        Loop over the CEDA files in reverse
 
     Returns
     -------
@@ -40,6 +42,9 @@ def download_ftp(input, output, username, password):
 
     # list children files:
     filelist = f.nlst()
+
+    if reverse:
+        filelist.reverse()
 
     counter = 0
     for file in filelist:
@@ -84,8 +89,9 @@ if __name__ == "__main__":
     parser.add_argument("--output", help="Path to save the downloaded data", required=False, default=".", type=str)
     parser.add_argument("--username", help="Username to conect to the CEDA servers", required=True, type=str)
     parser.add_argument("--psw", help="Password to authenticate to the CEDA servers", required=True, type=str)
+    parser.add_argument("--reverse", help="Run download in reverse (useful to run downloads in parallel)", action='store_true')
 
     # Read arguments from command line
     args = parser.parse_args()
 
-    download_ftp(args.input, args.output, args.username, args.psw)
+    download_ftp(args.input, args.output, args.username, args.psw, args.reverse)
