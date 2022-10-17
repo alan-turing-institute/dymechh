@@ -21,10 +21,8 @@ from os.path import basename
 def reproj_to_geotif(x):
     f = x[0]
     out_dir = x[1]
-    ncfile = xr.open_dataset(f).drop_dims("bnds").squeeze()
+    ncfile = xr.open_dataset(f, decode_coords="all").drop_dims("bnds").squeeze()
     ncfile = ncfile.rio.set_spatial_dims('grid_longitude', 'grid_latitude')
-    ncfile.rio.write_crs("EPSG:4326", inplace=True)
-    del ncfile["tasmax"].attrs['grid_mapping'] # need to drop this too in order to size properly
     f0_n = f"{out_dir}/{basename(f).replace('.nc','.tif')}"
     ncfile["tasmax"].rio.to_raster(f0_n)
     geotif = xr.open_dataset(f0_n, engine='rasterio')
