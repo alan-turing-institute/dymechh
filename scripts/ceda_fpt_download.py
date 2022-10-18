@@ -1,12 +1,13 @@
 #!/usr/bin/env python
 import ftplib
 import os
+import random
 from datetime import datetime
 from pathlib import Path
 import argparse
 
 
-def download_ftp(input, output, username, password, reverse):
+def download_ftp(input, output, username, password, order):
     """
     Function to connect to the CEDA archive and download data.
 
@@ -20,8 +21,9 @@ def download_ftp(input, output, username, password, reverse):
         CEDA registered username
     password: str
         CEDA FPT password (obtained as explained in https://help.ceda.ac.uk/article/280-ftp)
-    reverse: bool
-        Loop over the CEDA files in reverse
+    order: int
+        Order in which to run download 0: default order of file from ftp server 1: reverse order 2: shuffle. This functionality
+        allows to run several downloads in parallel without rewriting files that are being downloaded.
 
     Returns
     -------
@@ -43,8 +45,10 @@ def download_ftp(input, output, username, password, reverse):
     # list children files:
     filelist = f.nlst()
 
-    if reverse:
+    if order == 1:
         filelist.reverse()
+    elif order == 2:
+        random.shuffle(filelist)
 
     counter = 0
     for file in filelist:
@@ -89,9 +93,19 @@ if __name__ == "__main__":
     parser.add_argument("--output", help="Path to save the downloaded data", required=False, default=".", type=str)
     parser.add_argument("--username", help="Username to conect to the CEDA servers", required=True, type=str)
     parser.add_argument("--psw", help="Password to authenticate to the CEDA servers", required=True, type=str)
-    parser.add_argument("--reverse", help="Run download in reverse (useful to run downloads in parallel)", action='store_true')
+    parser.add_argument("--reverse", help="Run download in reverse (useful to run downloads in parallel)",
+                        action='store_true')
+    parser.add_argument("--shuffle", help="Run download in shuffle mode (useful to run downloads in parallel)",
+                        action='store_true')
 
     # Read arguments from command line
     args = parser.parse_args()
 
-    download_ftp(args.input, args.output, args.username, args.psw, args.reverse)
+    order = 0
+    if args.reverse:
+        order = 1
+    # reverse precedes shuffle
+    elif args.shuffle:
+        order = 2
+
+    download_ftp(args.input, args.output, args.username, args.psw, order)
