@@ -97,8 +97,8 @@ downloads can be interrupted and files truncated). If the file in the archive an
 the download for that file is skipped. This allows to restart the download process at any time in case of being disconnected
 from the server. 
 
-The script also has a `--reversed` flag, that reverses the order how the files a downloaded. This allows to run
-two parallel downloading jobs, speeding up the process. 
+The script also has a `--reversed` and `--shuffle` flags, that reverses or shuffles the order how the files a downloaded. 
+This allows to run parallel downloading jobs, speeding up the process. 
 
 
 
