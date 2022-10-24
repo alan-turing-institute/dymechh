@@ -62,7 +62,7 @@ def download_ftp(input, output, username, password, order):
         # of the one in the server, if is the same do not download file.
         if os.path.isfile(file):
             f.sendcmd("TYPE I")
-            size_ftp = f.size(os.path.join(input, file))
+            size_ftp = f.size(file)
             size_local = os.stat(file).st_size
 
             if size_ftp == size_local:
