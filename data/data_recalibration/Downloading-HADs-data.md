@@ -75,3 +75,32 @@ In order to download a single file use the following format, replacing <filename
 ``` bash
 curl --cert cred.pem -L -c /dev/null  -O https://data.ceda.ac.uk/badc/ukmo-hadobs/data/insitu/MOHC/HadOBS/HadUK-Grid/v1.1.0.0/1km/tasmax/day/v20220310/<filename>
 ```
+
+### 4. Download files using FPT (alternative procedure)
+
+CEDA offers and FTP archive download services through ftp.ceda.ac.uk for all the archive.
+To login to the main CEDA ftp server, ftp.ceda.ac.uk, please use your CEDA username and your FTP password. 
+Your FTP password is separate from the password for your CEDA web account, you can find information in how to access it
+[here](https://help.ceda.ac.uk/article/280-ftp). 
+
+We have created a [python script](scripts/ceda_fpt_download.py) that allows you to download files from the archive from the
+command line. You need to provide your username, password, directory path of the data you want to download and output path
+in your local machine. An example is the following:
+
+```
+python ceda_fpt_download.py --input /badc/ukmo-hadobs/data/insitu/MOHC/HadOBS/HadUK-Grid/v1.1.0.0/1km/tasmin/day/v20220310 --output output_directory --user "your_username" --psw "your_ftp_passrword"
+```
+
+the script downloads every file available in the input path. Before downloading the script checks is the file 
+already exists in the output directory, if it does the script compares the size of the files (given that due connection issues 
+downloads can be interrupted and files truncated). If the file in the archive and the local file have equal sizes, then
+the download for that file is skipped. This allows to restart the download process at any time in case of being disconnected
+from the server. 
+
+The script also has a `--reversed` and `--shuffle` flags, that reverses or shuffles the order how the files a downloaded. 
+This allows to run parallel downloading jobs, speeding up the process. 
+
+
+
+
+
