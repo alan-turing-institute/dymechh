@@ -12,6 +12,7 @@ from glob import glob
 import numpy as np 
 import xarray as xr
 import rioxarray
+from pathlib import Path
 import multiprocessing
 from os import cpu_count
 from tqdm import tqdm
@@ -23,6 +24,7 @@ def reproj_to_geotif(x):
     out_dir = x[1]
     ncfile = xr.open_dataset(f, decode_coords="all").drop_dims("bnds").squeeze()
     ncfile = ncfile.rio.set_spatial_dims('grid_longitude', 'grid_latitude')
+    Path(out_dir).mkdir(parents=True, exist_ok=True)
     f0_n = f"{out_dir}/{basename(f).replace('.nc','.tif')}"
     ncfile["tasmax"].rio.to_raster(f0_n)
     geotif = xr.open_dataset(f0_n, engine='rasterio')

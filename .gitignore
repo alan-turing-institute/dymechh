@@ -136,3 +136,4 @@ dmypy.json
 
 ## Large Datasets so should ignore data/
 data/
+run_conversion.sh
