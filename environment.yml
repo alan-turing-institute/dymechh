@@ -3,10 +3,22 @@ channels:
   - conda-forge
 dependencies:
   - bzip2=1.0.8
+  - c-ares=1.18.1
   - ca-certificates=2022.9.24
+  - hdf5=1.12.2
+  - krb5=1.19.3
+  - libcurl=7.86.0
+  - libcxx=14.0.6
+  - libedit=3.1.20191231
+  - libev=4.33
   - libffi=3.4.2
+  - libgfortran=5.0.0
+  - libgfortran5=11.3.0
+  - libnghttp2=1.47.0
   - libsqlite=3.39.4
+  - libssh2=1.10.0
   - libzlib=1.2.13
+  - llvm-openmp=14.0.4
   - ncurses=6.3
   - openssl=3.0.5
   - pip=22.3
