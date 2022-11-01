@@ -51,4 +51,5 @@ dependencies:
     - snuggs==1.4.7
     - tqdm==4.64.1
     - xarray==2022.10.0
+    - matplotlib==3.6.1
 prefix: /usr/local/Caskroom/miniforge/base/envs/dyme
