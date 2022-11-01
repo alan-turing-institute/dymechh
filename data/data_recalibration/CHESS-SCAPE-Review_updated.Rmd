@@ -1,0 +1,1034 @@
+---
+title: "CHESS SCAPE data review"
+author: "Ruth Bowyer"
+date: "`r format(Sys.Date())`"
+output:
+  html_document:
+    theme: cosmo
+    toc: TRUE
+    toc_float: TRUE
+    toc_depth: 4
+    code_folding: hide
+    df_print: paged
+---
+
+```{r message=FALSE, warning=F}
+# Packages
+
+library(tidyverse) 
+library(exactextractr)  
+library(raster) 
+library(sf)
+library(terra) 
+library(rgdal) 
+library(tmap) #Pretty maps
+library(beepr) #Beloved beepr does not seem to work on the vm - i think from memory it requires a install of something sound related on the linux machine, and it's probably worth nobody's time to sort it out!! 
+library(RColorBrewer) #Fig col palettes
+library(viridis) #Fig col palettes
+
+knitr::opts_chunk$set(fig.align = "center", out.width="90%") 
+```
+
+# **Background**
+
+
+The CHESS SCAPE data available on CEDA: https://catalogue.ceda.ac.uk/uuid/8194b416cbee482b89e0dfbe17c5786c is an ensemble of four different realisations of future climate for each of four different representative concentration pathway scenarios (RCP2.6, RCP4.5, RCP6.0 and RCP8.5), provided both with and without bias correction.
+
+The dataset contains the following variables, downscaled from 12km UKCP to 1km x 1km grid:
+
+ - Air temperature (K) 
+ - Specific humidity (kg kg-1)
+ - Relative humidity (%)
+ - Wind speed (m s-1)
+ - Downward longwave radiation (W m-2)
+ - Downward shortwave radiation (W m-2)
+ - Precipitation (kg m-2 s-2)
+ - Surface air pressure (Pa).
+ - Daily minimum air temperature (K) 
+ - Daily maximum air temperature (K) 
+ - Daily temperature range (K). 
+ 
+The data are provided in gridded netCDF files at 1 km resolution aligned to the Ordnance Survey / British National Grid (actually I think they are in a different projection on import, but that's what the CEDA data info says - below the projection seems to be EPSG 9001, but there is info on the NetCDF file that looks to readily allow reporjection to BNG)
+
+Here we will review the annual/seasonal mean data, both with and without bias correction. 
+
+We will focus on max temp and precipitation **for this initial comparison**. 
+
+We will then compare it to the UKCP2.2 data 
+
+**Updated to original version** - The seasons start from Winter and therefore and numbered as follows: 1. Winter, 2. Spring, 3. Summer, 4. Winter
+
+##  **Thoughts and considerations for LCAT**
+
+A few things to draw your attention to:
+
+ - As you'll see on the maps in section 2b., there are a few grid cells missing in the bias adjusted data compared to the raw data. I'm not sure why this is, but I think safe to assume as there are few and they are all coastal, this is OK.
+
+ - I'm not sure which bias adjustment method they've used as I can't find it in the docs (and they might have used a different method for the annual/seasonal data which I've reviewed, vs the daily data, as different methods can be more appropriate for either). However, no immediate alarm bells ring when comparing the two. You may be interested to note that, depending on the run, BA data can be higher or lower than the predicted mean (ie mean in 'raw' data) - see the trends figures in section 1c for example, and the paired differences in 2b. This might be a consideration for which Run to chose (I think it suggests to consider all of them).
+ 
+ - Whilst we work on the finer methodological details for bias adjustment, but also for conversion from RCP to specific warming level, might I suggest that in the interim period for LCAT's November launch the RCP that best reflects the change in global temperature that is preferred is presented, given the CHESS-SCAPE provides this too. Incase you don't have the conversion table I've pasted it below:
+ 
+```{r}
+k <- data.frame(RCP = c("RCP2.6", "RCP4.5", "RCP6.0", "RCP8.5"),
+                Change = c("1.6 (0.9 - 2.3)", 
+                                                            "2.4 (1.7 - 3.2)",
+                                                            "2.8 (2.0 - 3.7)",
+                                                            "4.3 (3.2 - 5.4)"))
+
+names(k)[2] <- paste0("Change in Global Mean Temp \nby 2081-2100 (mean, CIs)")
+k
+```
+
+
+**Note about this markdown**
+
+I've included the Rcode for reference/sanity checking. You can click to reveal, should you wish, using the 'Code' button. 
+
+
+# **CHESS-SCAPE data review**
+
+- Cropping all data to Cornwall for ease of processing 
+- Using *annual mean* data - which is based on daily data - and *seasonal averages*
+- Using the data initially for RCP8.5 
+
+The following variables are reviewed and presented:
+
+- **Section 1. Tasmax** (max temp) variable - but this is a bit unintuitive as here I'm considering the annual average (of daily max temp). I start with one example of raw data, then compare it to the bias adjusted version, then compare trends and distributions across runs
+- **Section 2. Precipitation** - I've used the seasonal averages for review here, and selected just Summer and Winter
+
+# **1. Annual average of daily max temperature (Tasmax) **
+
+To start with, looking at one run, of the 'raw' (ie bias adjusted/recalibrated) climate projection. 
+
+Tasmax is a slightly unintuitive variable - as is average across the year of daily max temp - ie the **average annual max temp** (not the max annual temp)
+
+```{r message = F, warning = F}
+
+dd <- "/mnt/vmfileshare/ClimateData/Raw/CHESS-SCAPE/annual"
+
+nc_file <- paste0(dd,"/chess-scape_rcp85_01_tasmax_uk_1km_annual_19801201-20801130.nc")
+
+R1 <- rast(nc_file) #SpatRaster class
+R1_b <- brick(R1)
+
+dd <- "/mnt/vmfileshare/ClimateData"
+
+
+msoa <- st_read(paste0(dd,'/shapefiles/Middle_Layer_Super_Output_Areas_(December_2011)_Boundaries/',
+                       "Middle_Layer_Super_Output_Areas_(December_2011)_Boundaries.shp"), quiet=TRUE)
+
+polygon <- readOGR(paste0(dd,'/shapefiles/Middle_Layer_Super_Output_Areas_(December_2011)_Boundaries/',
+                       "Middle_Layer_Super_Output_Areas_(December_2011)_Boundaries.shp"), verbose=FALSE)
+
+
+```
+
+### **File description - annual tasmax data**
+
+
+```{r}
+Cornwall<- polygon[grepl("Cornwall", polygon@data$msoa11nm), ]
+
+#Extract the extent of Cornwall and create a simple bounding box for extracting climate data 
+e <- extent(Cornwall@bbox)
+e <- as(e,"SpatialPolygons")
+```
+
+**Layers within the .nc (NetCDF) file:**
+
+```{r}
+nlayers(R1_b) #100 layers for each year
+```
+
+100 layers = one for each year provided
+
+**Overview of file aspects:**
+
+```{r}
+#Details of the file 
+R1
+```
+
+**Further details of the projection/coordinate reference system**
+
+The below details the coordinate reference system for the data - this can help understand any reprojections that might have happened to the data along the way 
+
+```{r}
+st_crs(R1)
+```
+
+CRS is IGS97 (EPSG:9001) https://epsg.io/9001 
+
+For context, UKCP is provided in rotated pole-grid (although hard to find docs on the ID for the crs), and we have been projecting to BNG https://epsg.io/27700 
+
+There can be issues/changes to data with data reprojection and this should be reviewed, but not issues that I can see from the file info. 
+
+Kelvin conversion to degrees celcius is -273.15 
+
+```{r}
+#RDS containing shapefile of MSOA boundaries cropped to Lewisham for easy testing
+#Lewisham <- readRDS("/mnt/vmfileshare/ClimateData/Interim/lewisham_shape.RDS")
+#Extent of lewisham shapefile
+#e <- readRDS("/mnt/vmfileshare/ClimateData/Interim/lewisham_shape.RDS")
+
+#Cropping raster brick
+R1_b_crop <- crop(R1_b, e)
+
+#Convert the temperature from Kelvin to celsius
+R1_b_crop@data@values <- R1_b_crop@data@values-273.15
+
+#Selecting three 'years' 
+YL <- list(R1_b_crop$tasmax_1, R1_b_crop$tasmax_50, R1_b_crop$tasmax_100)
+
+```
+
+
+### **Maps** 
+
+#### **Fig 1. Spatial distribution of 3 years of tasmax data extracted from Run01, RCP8.5.**
+
+3 years of tasmax data from the 100 year series have been extracted for review: 1981, 2030, 2080 
+
+```{r tmax unadj maps, message= F}
+
+
+names <- c("1981", "2030", "2080")
+names(YL) <- names
+
+YL_maps <- lapply(names, function(i){
+  x <- YL[[i]]
+  tmap <- 
+    tm_shape(x) +
+    tm_basemap(leaflet::providers$OpenStreetMap) +
+    tm_raster(title="Tasmax oC",
+              palette=c("#0C2C84", "#FFFFCC", "#B7121F"), 
+              style = "fixed",
+              breaks = c(seq(11, 18, 0.5))) +
+	tm_legend(outside=TRUE, title=i) +
+  tm_shape(Cornwall) + tm_borders(col="black", lwd=0.25)})
+
+tmap_mode("view")
+
+YL_maps %>%
+  tmap_arrange(nrow = 3)
+
+```
+
+
+
+
+### **Distributions** 
+
+
+```{r message = F}
+
+YL_hists_df <- sapply(names, function(i){
+  x <- YL[[i]]
+  x@data@values
+  })
+
+YL_hists_df <- as.data.frame(YL_hists_df)
+
+#There are NAs values for the sea grid cells - so this removes them
+YL_hists_df <- YL_hists_df[complete.cases(YL_hists_df),]
+
+YL_hists_df <- reshape2::melt(YL_hists_df)
+
+names(YL_hists_df)[1] <- "Year"
+```
+
+
+#### **Fig 2. Distribution of tasmax values of 3 years of tasmax data extracted from Run01, RCP8.5**
+
+The histograms below demonstrate the annual distribution of values for the three years selected
+
+```{r warning = F, message=F}
+
+Breakval <- round((max(YL_hists_df$value) - min(YL_hists_df$value))*2, digits=0)
+cols <- colorRampPalette(c("#0C2C84", "#FFFFCC", "#B7121F"))(Breakval)
+
+  ggplot(YL_hists_df) +
+       facet_wrap(.~ Year) +
+  geom_histogram(aes(value, fill = cut(value, round((max(value)-min(value))*2,digits=0)))) + 
+  scale_fill_manual(values=cols, name = "tmax oC") +
+  theme_bw() + xlab("Av max temp oC") + ylab("")
+
+```
+
+
+
+#### **Fig 3. Time series trends of annual average max temperature, Run1, UKCP8.5, 'Raw'**
+
+Plot illustrates the average (expressed as 1SD from the mean) by-year annual average max temp in Cornwall (i.e. all years considered here )
+
+```{r message = F}
+df <- as(R1_b_crop, "SpatialPolygonsDataFrame")
+dff <- as.data.frame(df)
+
+dff_m <- reshape2::melt(dff)
+names(dff_m)[1] <- "Year"
+dff_m$Year <- sub("tasmax_", "Y", dff_m$Year)
+
+dfg<- dff_m %>% group_by(Year) %>% summarise(sd=sd(value), mean=mean(value,na.rm=T))
+dfg$Yn <- as.numeric(sub("Y", "", dfg$Year)) + 1980
+
+
+ggplot(dfg) + 
+  geom_ribbon(aes(x = Yn, ymin = mean - sd, ymax= mean + sd), color="lightgrey", alpha=0.5) +
+  geom_line(aes(x=Yn, y=mean), color="cornflowerblue") +
+  theme_bw() + xlab("Year") + ylab("Annual av daily max temp oC")
+```
+
+
+
+## **1b. Compare to bias adjusted tasmax**
+
+Same CHESS-SCAPE run and RCP (i.e. Run1 and RCP 8.5), but the bias adjusted version, compared below 
+
+Can't seem to find the exact method for adjustment in the docs.
+
+For the observational data necessary, they are using the 'CHESS-met' data set, which include: *"a number of meteorological input data sets. The precipitation data were obtained by scaling the CEH-GEAR daily rainfall estimates to the units required for JULES input. Other variables were interpolated from coarser resolution MORECS, CRU TS and WATCH forcing data variables"* - more info can be downloaded here: https://catalogue.ceh.ac.uk/documents/2ab15bf0-ad08-415c-ba64-831168be7293 
+
+```{r message = F}
+
+dd <- "/mnt/vmfileshare/ClimateData/Raw/CHESS-SCAPE/annual"
+nc_file <- paste0(dd,"/chess-scape_rcp85_bias-corrected_01_tasmax_uk_1km_annual_19801201-20801130.nc")
+
+R2 <- rast(nc_file) #SpatRaster class
+R2_b <- brick(R2)
+
+R2_b_crop <- crop(R2_b, e)
+
+#Convert the temperature from Kelvin to celsius
+R2_b_crop@data@values <- R2_b_crop@data@values-273.15
+
+YL2 <- list(R2_b_crop$tasmax_1, R2_b_crop$tasmax_50, R2_b_crop$tasmax_100)
+```
+
+#### **Fig 4. Spatial distribution of 3 years of 'raw' vs. bias adjusted tasmax data RCP8.5, Run 1, for three years** 
+
+As above, these maps show the 3 years extracted for the 50 year intervals. 
+
+```{r crop brick and convert to kelvins, message=F,warning=F}
+
+#Cropping raster brick
+R2_b_crop <- crop(R2_b, e)
+
+#Convert the temperature from Kelvin to celsius
+R2_b_crop@data@values <- R2_b_crop@data@values-273.15
+
+Y1981_2 <- R2_b_crop$tasmax_1
+Y2030_2 <- R2_b_crop$tasmax_50
+Y2080_2 <- R2_b_crop$tasmax_100
+
+YL_2 <- list(Y1981_2, Y2030_2, Y2080_2)
+names(YL_2) <- names
+
+tmap_mode("plot")
+
+#Rerunning here slightly differently for prettier when changing the map view 
+YL_maps <- lapply(names, function(i){
+  x<- YL[[i]]
+  tmap1 <- 
+    tm_shape(x) +
+    tm_raster(palette=c("#0C2C84", "#FFFFCC", "#B7121F"), 
+              style = "fixed",
+              breaks = c(seq(11, 18, 0.5))) +
+    tm_layout(paste0(i), legend.show = FALSE) +
+  tm_shape(Cornwall) + tm_borders(col="black", lwd=0.25) 
+  })
+
+
+YL_maps_2 <- lapply(names, function(i){
+  x<- YL_2[[i]]
+  tmap1 <- 
+    tm_shape(x) +
+    tm_raster(palette=c("#0C2C84", "#FFFFCC", "#B7121F"), 
+              style = "fixed",
+              breaks = c(seq(11, 18, 0.5))) +
+    tm_layout(paste0(i, " BA"), legend.show = FALSE) +
+  tm_shape(Cornwall) + tm_borders(col="black", lwd=0.25) 
+  })
+
+#Additional legend only map, for easy plotting to grid
+legend.map <- tm_shape(YL[[1]]) +
+    tm_raster(title= "Av. daily max temp (oC)",
+    palette=c("#0C2C84", "#FFFFCC", "#B7121F"),
+    breaks = c(seq(11, 18, 0.5))) +
+    tm_layout(legend.only = TRUE)
+
+#Creates entirely blank map, for easy plotting to grid
+blank <- tm_shape(YL[[1]]) +
+  tm_raster(palette=c("#FFFFFF")) +
+    tm_layout("", legend.show = FALSE) +
+           tm_layout(frame = FALSE)
+```
+
+```{r tmap tmax comp, fig.height=9, out.width="100%"}
+
+tmap_arrange(YL_maps[[1]], YL_maps_2[[1]], blank,
+             YL_maps[[2]], YL_maps_2[[2]], legend.map,
+             YL_maps[[3]], YL_maps_2[[3]], blank,
+             nrow = 3)
+
+```
+
+
+
+### **Distributions** 
+
+
+There are slightly more grid cell values available in the 'raw' data - I explore this below in section 2b. 
+
+```{r message = F}
+
+YL_BA_df <- sapply(names, function(i){
+  x <- YL_2[[i]]
+  x@data@values
+  })
+
+YL_BA_df <- as.data.frame(YL_BA_df)
+
+#There are NAs values for the sea grid cells
+
+YL_BA_df <- YL_BA_df[complete.cases(YL_BA_df),]
+
+YL_BA_df <- reshape2::melt(YL_BA_df)
+names(YL_BA_df)[1] <- "Year"
+
+#Create another var to graph the different methods
+YL_BA_df$Adj <- "Bias Adj"
+YL_hists_df$Adj <- "'Raw'"
+
+hist.df <- rbind(YL_hists_df, YL_BA_df)
+```
+
+#### **Fig 5a. Distribution of 3 years of 'raw' vs. bias adjusted tasmax data RCP8.5, Run 1, for three years **
+
+```{r}
+  ggplot(hist.df) +
+       facet_wrap(.~ Year) +
+        geom_histogram(aes(value, fill = Adj), alpha=0.75, binwidth = 0.25)+
+  scale_fill_manual(values=c("#999999", "#CC79A7"), name = "tasmax (oC)") +
+  theme_bw() + xlab("Av max temp oC") + ylab("")
+
+```
+
+#### **Fig 5b. Distribution and comparison of 3 years of 'raw' vs. bias adjusted tasmax data RCP8.5, Run 1, for three years **
+
+
+Below fig is a bit clearer than the above for demonstrating the bias adjustment applied here results in higher estimates of warming value, and a greater range of values. This is consistent with the literature. 
+
+```{r warning=FALSE}
+
+
+hist.df$value_f <- as.factor(round(hist.df$value, digits=1))
+
+ggplot(hist.df, aes(x = value_f, fill = Adj)) + 
+  geom_bar(data=subset(hist.df, Adj == "Bias Adj")) + 
+  geom_bar(data=subset(hist.df, Adj == "'Raw'"), aes(y=..count..*(-1))) +
+  coord_flip() + 
+  geom_hline(yintercept = 0, linetype="dashed", colour="lightgrey") +
+  facet_wrap(.~Year) +
+  scale_fill_manual(values=c("#999999","#CC79A7"), name = "") +
+  theme_minimal() + ylab("n") + 
+  xlab("Av annual daily Tmax (oC)")+ 
+  scale_x_discrete(breaks = c("11", "12", "13", "14", "15", "16", "17", "18"))
+
+
+  
+```
+
+### **Time series comparison**
+
+#### **Fig 6. Time series trends of annual average max temperature, Run1, UKCP8.5, 'Raw' vs Bias-adjusted **
+
+
+```{r message = F}
+
+melty <- function(x,y){
+  df <- as(x, "SpatialPolygonsDataFrame")
+  df <- as.data.frame(df)
+  df_m <- reshape2::melt(df)
+  names(df_m)[1] <- "Year"
+  df_m$Year <- sub("tasmax_", "Y", df_m$Year)
+  df_m$Adj <- paste0(y)
+  list(df_m)
+}
+
+melted_dfsL <- mapply(melty, list(R1_b_crop, R2_b_crop), c("Raw","BA"))
+names(melted_dfsL) <- c("df_raw", "df_BA")
+
+df2_m <- melted_dfsL %>% reduce(rbind)
+
+dfg<- df2_m %>% group_by(Year, Adj) %>% summarise(sd=sd(value), mean=mean(value,na.rm=T))
+dfg$Yn <- as.numeric(sub("Y", "", dfg$Year)) + 1980
+
+G1 <- ggplot(dfg, aes(fill=Adj)) + 
+    geom_line(aes(x=Yn, y=mean, group=Adj, colour=Adj)) +
+  geom_ribbon(aes(x = Yn, ymin = mean - sd, ymax= mean + sd), alpha=0.4) + 
+  geom_vline(xintercept = 2020, linetype="dashed",color="lightgrey") +
+  theme_bw() + xlab("Year") + ylab("Annual av daily max temp oC") + 
+  scale_fill_manual(values=c("#999999", "#CC79A7"), name = "") +
+   scale_colour_manual(values=c("#999999", "#CC79A7"), name = "")
+
+#Annotating the plot for better understanding
+
+G1 + 
+  geom_segment(mapping=aes(x=1981, y=18, xend=2020, yend=18),
+               arrow=arrow(ends='both',type="closed", length = unit(0.2, "cm")), 
+               size=0.75, color="#ffa25f",
+               lineend= 'butt', linejoin = 'bevel', alpha=10) +
+        scale_alpha_manual("Alpha", values = c("a"=0.8)) +
+    annotate("text", x = c(2000.5), y = c(18.25), 
+           label = "Backcast data", color="#CC5500", 
+           size=4 , fontface="bold", alpha=0.8)
+```
+
+This figure illustrates the 'raw' and bias-adjusted climate projection (for Run1, UKCP8.5). The line indicates the annual mean, and the shaded area reflect the standard deviation around the mean for each year for each dataset.
+
+I've also highlighted the backcast trend. Backcasted data represents data simulating past climate, to allow for bias adjustment with observational datasets. 
+
+## **1c. All runs of 8.5 data**
+
+Above represents the data for one run of CHESS-SCAPE 8.5 data. Below compared are all runs for RCP8.5 available in the CHESS-SCAPE data
+
+### **Time series**
+
+```{r}
+
+Run1_raw_c <- R1_b_crop
+Run1_bias_c <- R2_b_crop
+
+#Read and crop the other Runs 
+chess_data <- list.files("/mnt/vmfileshare/ClimateData/Raw/CHESS-SCAPE/annual") 
+tmax_chess <- chess_data[grepl("tasmax", chess_data)]
+tmax_chess <- tmax_chess[grepl("rcp85", tmax_chess)]
+tmax_chess_names <- ifelse(grepl("bias-corrected", tmax_chess), 
+                           paste0(tmax_chess, "_BA"), tmax_chess)
+tmax_chess_names <- gsub("chess-scape_rcp85_bias-corrected_|chess-scape_rcp85_",
+                         "Run",tmax_chess_names)
+tmax_chess_names <- gsub("_tasmax_uk_1km_annual_19801201-20801130.nc",
+                         "_tasmax",tmax_chess_names)
+
+
+dd <- "/mnt/vmfileshare/ClimateData/Raw/CHESS-SCAPE/annual"
+
+allruns_chess_tmax_crop <- lapply(tmax_chess, function(i){
+  nc_file <- paste0(dd,"/",i)
+  R <- rast(nc_file) 
+  R_b <- brick(R)
+  R_b_crop <- crop(R_b, e) #extent as above 
+  #Convert the temperature from Kelvin to celsius
+  R_b_crop@data@values <- R_b_crop@data@values-273.15
+  return(R_b_crop)
+})
+
+names(allruns_chess_tmax_crop) <- tmax_chess_names
+
+allruns_chess_tmax_crop_3Y <- lapply(allruns_chess_tmax_crop, function(i){
+  list(i$tasmax_1, i$tasmax_50, i$tasmax_100)
+})
+
+
+#List with existing datasets
+
+
+```
+
+```{r warning = F, message = F}
+melted_dfsL_allruns <- mapply(melty, allruns_chess_tmax_crop, tmax_chess_names)
+
+dfall_m <- melted_dfsL_allruns %>% reduce(rbind)
+names(dfall_m)[3] <- "Model"
+dfall_m$Run <- substr(dfall_m$Model,1,5)
+dfall_m$Adj <- ifelse(grepl("BA", dfall_m$Model), paste0("BA"), paste0("'Raw'"))
+
+dfg<- dfall_m %>% group_by(Year, Run, Adj) %>% summarise(sd=sd(value), mean=mean(value,na.rm=T))
+dfg$Yn <- as.numeric(sub("Y", "", dfg$Year)) + 1980
+
+dfg$Mod <- paste0(dfg$Run, " ",dfg$Adj)
+```
+
+#### **Fig 7a. Time series trends of annual average max temperature (tasmax), all runs, UKCP8.5, 'Raw' vs Bias-adjusted **
+
+```{r}
+ggplot(dfg, aes(fill=Mod)) + 
+    geom_line(aes(x=Yn, y=mean, group=Mod, colour=Mod)) +
+  geom_ribbon(aes(x = Yn, ymin = mean - sd, ymax= mean + sd), alpha=0.4) + 
+  geom_vline(xintercept = 2020, linetype="dashed",color="lightgrey") +
+  theme_bw() + xlab("Year") + ylab("Annual av daily max temp oC") + 
+  scale_fill_brewer(palette = "Paired", name = "") +
+   scale_colour_brewer(palette = "Paired", name = "")
+
+```
+
+Pleasing! But probably not super clear, so here is the above, faceted by adjustment vs raw...
+
+#### **Fig 7b. Time series trends of annual average max temperature (tasmax), all runs, UKCP8.5, 'Raw' vs Bias-adjusted, faceted by data type**
+
+```{r}
+ggplot(dfg, aes(fill=Mod)) + 
+    geom_line(aes(x=Yn, y=mean, group=Mod, colour=Mod)) +
+  geom_ribbon(aes(x = Yn, ymin = mean - sd, ymax= mean + sd), alpha=0.4) + 
+  geom_vline(xintercept = 2020, linetype="dashed",color="lightgrey") +
+  facet_wrap(.~Adj) +
+  theme_bw() + xlab("Year") + ylab("Annual av daily max temp oC") + 
+  scale_fill_brewer(palette = "Paired", name = "") +
+   scale_colour_brewer(palette = "Paired", name = "")
+
+
+```
+
+
+...and run
+
+#### **Fig 7c. Time series trends of annual average max temperature (tasmax), all runs, UKCP8.5, 'Raw' vs Bias-adjusted, faceted by run**
+
+```{r}
+ggplot(dfg, aes(fill=Mod)) + 
+    geom_line(aes(x=Yn, y=mean, group=Mod, colour=Mod)) +
+  geom_ribbon(aes(x = Yn, ymin = mean - sd, ymax= mean + sd), alpha=0.4) + 
+  geom_vline(xintercept = 2020, linetype="dashed",color="lightgrey") +
+  facet_wrap(.~Run) +
+  theme_bw() + xlab("Year") + ylab("Annual av daily max temp oC") + 
+  scale_fill_brewer(palette = "Paired", name = "") +
+   scale_colour_brewer(palette = "Paired", name = "")
+
+
+
+```
+
+This is a nice illustration that the bias adjustment extent differs depending on the run considered 
+
+# **2. Precipitation - seasonal means**
+
+## **2a. Trends and distributions**
+
+Seasonal average precipitation data 
+
+Daily conversion to mm/day is *86400 (from secs)
+
+Jumping right to look at all runs, both raw and adjusted for RCP8.5
+
+```{r}
+
+#Read and crop the precip files 
+chess_data <- list.files("/mnt/vmfileshare/ClimateData/Raw/CHESS-SCAPE/seasonal") 
+pr_chess <- chess_data[grepl("pr", chess_data)]
+pr_chess <- pr_chess[grepl("rcp85", pr_chess)]
+pr_chess_names <- ifelse(grepl("bias-corrected", pr_chess), 
+                           paste0(pr_chess, "_BA"), pr_chess)
+pr_chess_names <- gsub("chess-scape_rcp85_bias-corrected_|chess-scape_rcp85_",
+                         "Run",pr_chess_names)  
+pr_chess_names <- gsub("_pr_uk_1km_seasonal_19801201-20801130.nc",
+                         "_pr",pr_chess_names)
+
+dd <- "/mnt/vmfileshare/ClimateData/Raw/CHESS-SCAPE/seasonal"
+
+allruns_chess_pr_crop <- lapply(pr_chess, function(i){
+  nc_file <- paste0(dd,"/",i)
+  R <- rast(nc_file) 
+  R_b <- brick(R)
+  R_b_crop <- crop(R_b, e) #extent as above 
+  R_b_crop@data@values <- R_b_crop@data@values*86400 #Convert to daily -
+  return(R_b_crop)
+})
+
+names(allruns_chess_pr_crop) <- pr_chess_names
+
+```
+
+Using Summer and Winter averages - these are the the 3rd (Summer) and 1st (Winter) seasons
+
+```{r}
+#Renaming this so it's easier to understand
+new.names <- paste0("pr_", rep(1:100, each=4), "_", 1:4)
+
+allruns_chess_pr_crop <- lapply(allruns_chess_pr_crop, function(n){
+  names(n) <- new.names
+  return(n)
+})
+
+#New names vector for renaming the by year/season
+names <- paste0(rep(c(1981,2030,2080), each=2), c("_Summer", "_Winter"))
+
+allruns_chess_pr_crop_3Y <- lapply(allruns_chess_pr_crop, function(i){
+  L <- list(i$pr_1_3, i$pr_1_1,
+            i$pr_50_3, i$pr_50_1,
+            i$pr_100_3, i$pr_100_1)
+  names(L) <- names
+  return(L)
+})
+
+```
+
+
+```{r warning = F, message = F}
+
+allruns_chess_pr_crop_3Y_melt <- lapply(allruns_chess_pr_crop_3Y, function(x){
+   x <- x
+  #names is the 3 years + 2 seasons selected to review
+  YL_df <- sapply(names, function(i){
+    xx <- x[[i]]
+    xx@data@values
+  })
+
+  YL_df <- as.data.frame(YL_df)
+
+  #There are NAs values for the sea grid cells
+  YL_df <- YL_df[complete.cases(YL_df),]
+  YL_df <- reshape2::melt(YL_df)
+  names(YL_df)[1] <- "Year_Season" 
+  return(YL_df)
+})
+
+#Add a col in each dataframe for the model run + adj
+namevector <- function(x,y) {
+  x$Model <- paste0(y)
+  L <- list(x)
+  return(L)
+}
+
+names_pr_runs <- names(allruns_chess_pr_crop_3Y_melt)
+allruns_chess_pr_crop_3Y_melt_2 <- mapply(namevector, x=allruns_chess_pr_crop_3Y_melt, y=names_pr_runs)
+
+dfall_m2 <- allruns_chess_pr_crop_3Y_melt_2 %>% reduce(rbind)
+
+#Create grouping variables for easy summary and plotting
+dfall_m2$Run <- substr(dfall_m2$Model,1,5)
+dfall_m2$Adj <- ifelse(grepl("BA", dfall_m2$Model), paste0("BA"), paste0("'Raw'"))
+dfall_m2$Year <- substr(dfall_m2$Year_Season, 1,4)
+dfall_m2$Season <- gsub("1981_|2030_|2080_", "",dfall_m2$Year_Season)
+
+```  
+
+#### **Fig 8. A. Summer and B. Winter precipitation averages, for three years of 'raw' vs bias adjusted RCP8.5 data**
+
+Values represent the distribution of values across all grid cells within the area
+  
+```{r fig.height=12}  
+
+hist.df2 <- dfall_m2
+
+hist.df2$value_f <- as.factor(round(hist.df2$value, digits=1))
+hist.df2$value_1d <-round(hist.df2$value, digits=1)
+levels <- paste0(seq(0.9,11.0, 0.1))
+lev_a <- levels(hist.df2$value_f)
+levels <- levels[which(levels%in%lev_a)]
+
+hist.df2$value_f2 <- factor(hist.df2$value_f, levels=levels,  ordered = TRUE)
+
+
+Summerg <- ggplot(data=subset(hist.df2, Season == "Summer"), aes(x = value_1d, fill = Model), alpha=0.5) + 
+  geom_bar() +
+  geom_hline(yintercept = 0, linetype="dashed", colour="lightgrey") +
+  facet_grid(Year_Season~Adj) +
+  scale_fill_viridis(option  = "magma", name = "", discrete=T) +
+  theme_bw() + ylab("n") + 
+  xlab("Av annual daily precipitation (mm/m2)") 
+
+Winterg <- ggplot(data=subset(hist.df2, Season == "Winter"), aes(x = value_1d, fill = Model), alpha=0.5) + 
+  geom_bar() +
+  geom_hline(yintercept = 0, linetype="dashed", colour="lightgrey") +
+  facet_grid(Year_Season~Adj) +
+  scale_fill_viridis(option  = "mako", name = "", discrete=T) +
+  theme_bw() + ylab("n") + 
+  xlab("Av annual daily precipitation (mm/m2)") 
+
+ggpubr::ggarrange(Summerg, Winterg, nrow=2, legend = "right", labels=c("A", "B"))
+```
+
+Interesting adjustments to the distribution by bias adjustment
+
+### **Trends** 
+
+```{r warning = F, message=F}
+melty_pr <- function(x,y){
+  df <- as(x, "SpatialPolygonsDataFrame")
+  df <- as.data.frame(df)
+  df_m <- reshape2::melt(df)
+  names(df_m)[1] <- "Year_Season"
+  df_m$Model <- paste0(y)
+  list(df_m)
+}
+
+melted_dfsL_allruns_pr <- mapply(melty_pr, allruns_chess_pr_crop, pr_chess_names)
+
+dfall_m_pr <- melted_dfsL_allruns_pr %>% reduce(rbind)
+
+dfall_m_pr$Run <- substr(dfall_m_pr$Model,1,5)
+dfall_m_pr$Adj <- ifelse(grepl("BA", dfall_m_pr$Model), paste0("BA"), paste0("'Raw'"))
+
+dfall_m_pr$Year <- substr(dfall_m_pr$Year_Season, 1,nchar(as.character(dfall_m_pr$Year_Season))-2)
+dfall_m_pr$Yn <- as.numeric(sub("pr_", "", dfall_m_pr$Year)) +1980
+dfall_m_pr$Season <- ifelse(endsWith(as.character(dfall_m_pr$Year_Season), "_3"), "Summer", 
+                            ifelse(endsWith(as.character(dfall_m_pr$Year_Season), "_1"), "Winter", NA))
+
+dfall_m_pr <- dfall_m_pr[complete.cases(dfall_m_pr),]
+
+dfg_pr<- dfall_m_pr %>% group_by(Yn, Season, Run, Adj, Model) %>% summarise(sd=sd(value), mean=mean(value,na.rm=T))
+
+```
+
+#### **Fig 9 A. Summer and B. Winter precipitation trends for all runs, 'raw' and bias-adjusted of RCP8.5**
+
+```{r fig.height=10}
+Summerg2 <- ggplot(data=subset(dfg_pr, Season == "Summer"), aes(fill=Model)) + 
+    geom_line(aes(x=Yn, y=mean, group=Model, colour=Model)) +
+  geom_ribbon(aes(x = Yn, ymin = mean - sd, ymax= mean + sd), alpha=0.25) + 
+  geom_vline(xintercept = 2020, linetype="dashed",color="pink") +
+  theme_bw() + xlab("Year") + ylab("Annual av daily rainfall mm") + 
+  scale_fill_viridis(option  = "magma", name = "", discrete=T) +
+   scale_colour_viridis(option  = "magma", name = "", discrete=T) + ggtitle("Summer")
+
+
+Winterg2 <- ggplot(data=subset(dfg_pr, Season == "Winter"), aes(fill=Model)) + 
+    geom_line(aes(x=Yn, y=mean, group=Model, colour=Model)) +
+  geom_ribbon(aes(x = Yn, ymin = mean - sd, ymax= mean + sd), alpha=0.25) + 
+  geom_vline(xintercept = 2020, linetype="dashed",color="pink") +
+  theme_bw() + xlab("Year") + ylab("Annual av daily rainfall mm") + 
+  scale_fill_viridis(option  = "mako", name = "", discrete=T) +
+   scale_colour_viridis(option  = "mako", name = "", discrete=T) + ggtitle("Winter")
+  
+ggpubr::ggarrange(Summerg2, Winterg2, nrow=2, legend = "right", labels=c("A", "B"))
+```
+
+#### **Fig 10A. Summer and B. Winter precipitation trends for all runs, 'raw' and bias-adjusted of RCP8.5, faceted by model run**
+
+```{r fig.height=10}
+Summerg3 <- ggplot(data=subset(dfg_pr, Season == "Summer"), aes(fill=Model)) + 
+      facet_wrap(.~Run) +
+      geom_line(aes(x=Yn, y=mean, group=Model, colour=Model)) +
+  geom_ribbon(aes(x = Yn, ymin = mean - sd, ymax= mean + sd), alpha=0.4) + 
+  geom_vline(xintercept = 2020, linetype="dashed",color="pink") +
+  theme_bw() + xlab("Year") + ylab("Annual av daily rainfall mm") + 
+  scale_fill_viridis(option  = "magma", name = "", discrete=T) +
+   scale_colour_viridis(option  = "magma", name = "", discrete=T) + 
+  ggtitle("Summer")
+
+
+
+Winterg3 <- ggplot(data=subset(dfg_pr, Season == "Winter"), aes(fill=Model))  + 
+      facet_wrap(.~Run) + 
+    geom_line(aes(x=Yn, y=mean, group=Model, colour=Model)) +
+  geom_ribbon(aes(x = Yn, ymin = mean - sd, ymax= mean + sd), alpha=0.4) + 
+  geom_vline(xintercept = 2020, linetype="dashed",color="pink") +
+  theme_bw() + xlab("Year") + ylab("Annual av daily rainfall mm") + 
+  scale_fill_viridis(option  = "mako", name = "", discrete=T) +
+   scale_colour_viridis(option  = "mako", name = "", discrete=T) + 
+  ggtitle("Winter")
+  
+ggpubr::ggarrange(Summerg3, Winterg3, nrow=2, legend = "right", labels=c("A", "B"))
+
+```
+
+
+
+#### **Fig 11A. Summer and B. Winter precipitation trends for all runs, 'raw' and bias-adjusted of RCP8.5, faceted by adjustment**
+
+```{r fig.height=10}
+
+Summerg4 <- ggplot(data=subset(dfg_pr, Season == "Summer"), aes(fill=Model)) + 
+      facet_wrap(.~Adj) +
+      geom_line(aes(x=Yn, y=mean, group=Model, colour=Model)) +
+  geom_ribbon(aes(x = Yn, ymin = mean - sd, ymax= mean + sd), alpha=0.4) + 
+  geom_vline(xintercept = 2020, linetype="dashed",color="pink") +
+  theme_bw() + xlab("Year") + ylab("Annual av daily rainfall mm") + 
+  scale_fill_viridis(option  = "magma", name = "", discrete=T) +
+   scale_colour_viridis(option  = "magma", name = "", discrete=T) + 
+  ggtitle("Summer")
+
+
+
+Winterg4 <- ggplot(data=subset(dfg_pr, Season == "Winter"), aes(fill=Model))  + 
+      facet_wrap(.~Adj) + 
+    geom_line(aes(x=Yn, y=mean, group=Model, colour=Model)) +
+  geom_ribbon(aes(x = Yn, ymin = mean - sd, ymax= mean + sd), alpha=0.1) + 
+  geom_vline(xintercept = 2020, linetype="dashed",color="pink") +
+  theme_bw() + xlab("Year") + ylab("Annual av daily rainfall mm") + 
+  scale_fill_viridis(option  = "mako", name = "", discrete=T) +
+   scale_colour_viridis(option  = "mako", name = "", discrete=T) + 
+  ggtitle("Winter")
+  
+ggpubr::ggarrange(Summerg4, Winterg4, nrow=2, legend = "right", labels=c("A", "B"))
+
+
+```
+
+
+
+
+## **2b. Difference comparison**
+
+
+Confirming statistically what we see visually above - that the 'raw' and adjusted data is different
+
+
+```{r}
+kruskal.test(dfall_m_pr$value, dfall_m_pr$Model)
+
+pairwise.wilcox.test(dfall_m_pr$value, dfall_m_pr$Model)
+```
+
+Interesting everything is *very* different from eachother, but with such a large amount of observations such evidence to reject the null (i.e. we have a low pvalue) is unsuprising! 
+
+I'm therefore going to compare between the paired sets of bias adjusted and 'raw' data 
+
+### **Missing data and Dissimilarity**
+
+First however, want to where the missing cells within the BA data are geographically 
+
+```{r message = F, warning = F}
+#lapply(allruns_chess_pr_crop_SG, dim) # shows that there are more rows in the non BA data
+
+allruns_chess_pr_crop_SG <- lapply(allruns_chess_pr_crop, function(x){
+  df <- as(x, "SpatialGridDataFrame") #Extracts data from raster as a spatial grid, creates 2 new cols with coords
+  df <- as.data.frame(df)
+  df$cellid <- paste0("x", df[,"s1"], "_y", df[,"s2"]) #Creates a cell id based on the coords - for easy joining
+  return(df)
+})
+
+
+#Extract the cellid only for comparison (assuming its the same across all but will check twice)
+l <- lapply(names(allruns_chess_pr_crop_SG), function(x) { 
+  df <- data.frame(allruns_chess_pr_crop_SG[[x]]$cellid, 
+                   1)#Acting as a dummy var as in returned data frame will be NA in reduced version
+  ns <- c("cellid", paste0("mat_",x))
+  names(df) <- ns
+  return(df)
+             })
+
+cellids <-l %>% reduce(full_join, "cellid")
+
+#Returns list of those where the cell is missing (in this case, all with the BA data)
+missingcellids <- cellids[!complete.cases(cellids),]
+#head(missingcellids)
+
+#Get an index 
+missingcellids_index <- ifelse(!complete.cases(cellids),1,0)
+
+sf_pr_run1_y1 <- allruns_chess_pr_crop$Run01_pr$pr_1_1
+
+#Create a dummy raster with same extent and crs etc, but values replaced with missingcellds 1 or 0 - this will highlight the missing cells 
+sf_pr_run1_null <- sf_pr_run1_y1 
+
+
+#Already NAs, presume over sea, but will check below, so creating a loop to add in the new values
+## This does assume that the cells remain in the same order, which will also check below 
+v <- sf_pr_run1_null@data@values
+dfv <- data.frame(cid =paste0("id",1:length(v)), val=v)
+dfv2 <- dfv[complete.cases(dfv),]
+dfv2$mci <- missingcellids_index
+
+dfv <- full_join(dfv, dfv2, by="cid")
+
+sf_pr_run1_null@data@values <- dfv$mci
+```
+
+
+The map below indicates in yellow (value 1) which cells are missing in the bias adjusted data
+
+#### **Fig 12. Spatial distribution of 1km cells missing in bias adjusted data (yellow)**
+
+```{r missing data map, message = F}
+
+tmap_mode("view")
+
+tm_shape(sf_pr_run1_null) + 
+    tm_basemap(leaflet::providers$OpenStreetMap) +
+    tm_raster(title = "",
+              palette=c("#D3D3D3", "#FFFF33"), 
+              alpha=0.9, n =2,
+              labels = c("All datasets", "Missing BA")) 
+
+
+  
+```
+
+
+It would be great to understand the exact reason why the bias adjustment was not applied to these areas (as other seemingly as coastal areas seem to have remained included), but as there are so few it is unlikely to meaningful effect summary variables etc 
+
+```{r}
+#Quick way of extracting cells ids avail across all datasets (complete cases)
+cellids_cc <-l %>% reduce(right_join, "cellid")
+allruns_chess_pr_crop_SG_cc <- lapply(allruns_chess_pr_crop_SG, function(x){
+  x <- x[which(x$cellid %in% cellids_cc$cellid),]
+})
+
+```
+
+
+### **Paired differences**
+
+```{r}
+
+#Merge within pair runs, can caluclate the difference
+Paired_pr_runs <- lapply(c("Run01", "Run04", "Run06", "Run15"), function(x){
+  dfL <- allruns_chess_pr_crop_SG_cc[grep(x, names(allruns_chess_pr_crop_SG_cc))]
+  df_p <- dfL %>% reduce(full_join, "cellid")
+  df_p$Runid <- paste(x)
+  return(df_p)
+})
+```
+
+Just calculating paired differences for the winter season here 
+
+```{r}
+
+#Calculated paired differences 
+diff_by_run_pr <- lapply(Paired_pr_runs, function(d){
+  vars <- paste0("pr_", 1:100, "_4", "\\.") #Vector of the value sets for each year/run - \\inc for the grepl to work
+  s <- sapply(vars, function(i){
+    di <- d[,grepl(i, names(d))]
+    diff <- di[,1] - di[,2] #not abs difference because it is useful to know the direction
+  })
+})
+
+names(diff_by_run_pr) <- paste0(c("Run01", "Run04", "Run06", "Run15"), "_paired")
+
+diff_by_run_pr <- lapply(diff_by_run_pr, as.data.frame)
+
+diff_by_run_pr <- mapply(namevector, diff_by_run_pr, names(diff_by_run_pr))
+diff_by_run_pr_df <- diff_by_run_pr %>% reduce(rbind)
+
+diff_by_run_pr_dfm <- reshape2::melt(diff_by_run_pr_df, id="Model")
+```
+
+
+#### **Fig 14. Paired differences in cell values for yearly winter estimates of precipitation between 'raw' and bias adjusted data for each Run** 
+
+The below figure illustrates the by cell, by year differences between the runs and their corresponding bias adjusted data. For example, a positive value reflects that the mean value for precipitation in winter in year x is higher in the 'raw' dataset compared with the bias adjusted dataset. 
+
+
+```{r warning = F}
+ggplot(diff_by_run_pr_dfm) +
+  geom_density(aes(value, fill = Model), alpha=0.5)+
+  scale_fill_viridis(option  = "mako", name = "", discrete=T) +
+  theme_bw() + xlim(-3,3) + xlab("Difference in cell values") +
+  geom_vline(xintercept = 0, linetype="dashed",color="#CC5500") +
+  ylim(0, 1.45) + ylab("density") +
+  annotate("text", x = c(0.15), y = c(1.3), 
+           label = "No difference", color="#CC5500", 
+           size=2 , fontface="bold", angle=270) +
+  annotate("text", x=c(-2, 2), y=c(1.3, 1.3),
+           label= c("Lower estimate \n in Raw data", "Lower estimate \n in BA data"),
+           size = 3, fontface="bold", color="#CC5500") +
+   geom_segment(mapping=aes(x=-1.2, y=1.2, xend=-2.5, yend=1.2),
+               arrow=arrow(type="closed", length = unit(0.18, "cm")), 
+               size=0.75, color="#CC5500",
+               lineend= 'butt', linejoin = 'bevel', alpha=10) +
+  geom_segment(mapping=aes(x=1.2, y=1.2, xend=2.5, yend=1.2),
+               arrow=arrow(type="closed", length = unit(0.18, "cm")), 
+               size=0.75, color="#CC5500",
+               lineend= 'butt', linejoin = 'bevel', alpha=10) 
+
+
+```
+
+
+This again demonstrates the difference between runs and datasets. 
+```{r}
+
+```
+
