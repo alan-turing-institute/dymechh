@@ -100,8 +100,9 @@ if __name__ == "__main__":
                         action='store_true')
     parser.add_argument("--shuffle", help="Run download in shuffle mode (useful to run downloads in parallel)",
                         action='store_true')
-    parser.add_argument("--batch", help="Download all directories in batch mode and change the dirctory structure to "
-                                        "fit Azure fileshare.",
+    parser.add_argument("--batch", help="Download all directories under a top level directory in batch mode and "
+                                        "change the directory structure to fit Azure fileshare structure (only "
+                                        "applicable to UKCP data).",
                         action='store_true')
 
     # Read arguments from command line
@@ -121,6 +122,9 @@ if __name__ == "__main__":
     if batch == 0:
         download_ftp(args.input, args.output, args.username, args.psw, order)
     elif batch == 1:
+        # this calls the download_ftp function multiple times to download all the CEDA UKCP data
+        # it reads them in the hierarchy that CEDA uses and converts them to a different hierarchy in
+        # the destination fileshare (reverting run number and variable name and removing the "day" level)
         for n in ["01", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "15"]:
             for v in ["clt", "flashrate", "hurs", "pr", "prsn", "psl", "rls", "rss", "sfcWind",
                       "snw", "tas", "tasmax", "tasmin", "uas", "vas", "wsgmax10m"]:
