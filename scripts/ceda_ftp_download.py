@@ -126,7 +126,7 @@ if __name__ == "__main__":
         # it reads them in the hierarchy that CEDA uses and converts them to a different hierarchy in
         # the destination fileshare (reverting run number and variable name and removing the "day" level)
         for n in ["01", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "14", "15"]:
-            for v in ["clt", "flashrate", "hurs", "pr", "prsn", "psl", "rls", "rss", "sfcWind",
+            for v in ["clt", "flashrate", "hurs", "huss", "pr", "prsn", "psl", "rls", "rss", "sfcWind",
                       "snw", "tas", "tasmax", "tasmin", "uas", "vas", "wsgmax10m"]:
                 download_ftp(os.path.join(args.input, n, v, "day", "latest"),
                              os.path.join(args.output, v, n, "latest"),
