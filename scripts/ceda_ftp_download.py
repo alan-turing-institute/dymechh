@@ -14,16 +14,19 @@ def download_ftp(input, output, username, password, order):
     Parameters
     ----------
     input: str
-        Path where the CEDA data to download is located (e.g '/badc/ukmo-hadobs/data/insitu/MOHC/HadOBS/HadUK-Grid/v1.1.0.0/1km/tasmin/day/v20220310')
+        Path where the CEDA data to download is located
+        (e.g '/badc/ukmo-hadobs/data/insitu/MOHC/HadOBS/HadUK-Grid/v1.1.0.0/1km/tasmin/day/v20220310'
+        or top level folder like '//badc/ukcp18/data/land-cpm/uk/2.2km/rcp85' for batch mode, where you want to
+        download all files in all sub-directories)
     output: str
-        Path to save the downloaded data
+        Path to save the downloaded data (top level folder if in batch mode)
     username: str
         CEDA registered username
     password: str
         CEDA FPT password (obtained as explained in https://help.ceda.ac.uk/article/280-ftp)
     order: int
-        Order in which to run download 0: default order of file from ftp server 1: reverse order 2: shuffle. This functionality
-        allows to run several downloads in parallel without rewriting files that are being downloaded.
+        Order in which to run download 0: default order of file from ftp server 1: reverse order 2: shuffle.
+        This functionality allows to run several downloads in parallel without rewriting files that are being downloaded.
 
     Returns
     -------
@@ -97,6 +100,10 @@ if __name__ == "__main__":
                         action='store_true')
     parser.add_argument("--shuffle", help="Run download in shuffle mode (useful to run downloads in parallel)",
                         action='store_true')
+    parser.add_argument("--batch", help="Download all directories under a top level directory in batch mode and "
+                                        "change the directory structure to fit Azure fileshare structure (only "
+                                        "applicable to UKCP data).",
+                        action='store_true')
 
     # Read arguments from command line
     args = parser.parse_args()
@@ -108,4 +115,22 @@ if __name__ == "__main__":
     elif args.shuffle:
         order = 2
 
-    download_ftp(args.input, args.output, args.username, args.psw, order)
+    batch = 0
+    if args.batch:
+        batch = 1
+
+    if batch == 0:
+        download_ftp(args.input, args.output, args.username, args.psw, order)
+    elif batch == 1:
+        # this calls the download_ftp function multiple times to download all the CEDA UKCP data
+        # it reads them in the hierarchy that CEDA uses and converts them to a different hierarchy in
+        # the destination fileshare (reverting run number and variable name and removing the "day" level)
+        for n in ["01", "04", "05", "06", "07", "08", "09", "10", "11", "12", "13", "15"]:
+            for v in ["clt", "flashrate", "hurs", "huss", "pr", "prsn", "psl", "rls", "rss", "sfcWind",
+                      "snw", "tas", "tasmax", "tasmin", "uas", "vas", "wsgmax10m"]:
+                download_ftp(os.path.join(args.input, n, v, "day", "latest"),
+                             os.path.join(args.output, v, n, "latest"),
+                             args.username,
+                             args.psw,
+                             order)
+
