@@ -1,0 +1,58 @@
+---
+title: "Reticulate-protobuf-testing.RMD"
+author: "Ruth C E Bowyer"
+date: "`r format(Sys.Date())`"
+output:
+  github_document
+---
+
+# 0. About
+
+This markdown tests the loading of an SPC .pb to R via reticulate / see how easy the working is
+
+Should make it easier to work across both R and python for building the dyme model 
+
+Venv set up following these instructions: https://solutions.posit.co/write-code/reticulate/  - outlined below
+
+```{bash eval=FALSE, include=TRUE}
+
+#In terminal- run once 
+cd reticulated-project
+virtualenv .venv
+source .venv/bin/activate
+pip install numpy pandas matplotlib protobuf
+
+
+```
+
+Add ```Sys.setenv("RETICULATE_PYTHON" = "reticulated-project/.venv/bin/python")``` to .Rprofile
+
+This very much did seem to be working - it would be easier if .venv andc .Rprofile were in the root directory I think 
+There is an error on loading it which suggests the wrong install though
+
+
+```{r reticulate set up}
+
+library(reticulate)
+py_config()
+
+```
+
+
+# 1. Data
+
+Data is Manchester .pb, downloaded 15.07.23 from  https://alan-turing-institute.github.io/uatk-spc/england_outputs.html 
+
+```{python}
+
+os.getcwd()
+import sys
+sys.path.insert(0, '/Users/rbowyer/Library/CloudStorage/OneDrive-TheAlanTuringInstitute/DyME-CHH/dyme_chh/scripts/spc')
+
+import synthpop_pb2
+
+```
+
+--that all seems to be set up fine, next is to actuallty play with the data --
+
+For commenting in future - I'm not sure the guidance here https://alan-turing-institute.github.io/uatk-spc/use_output.html actually tells you what to do when you have done the above - ie what if I want to now import an example file rather than convert to pandas 

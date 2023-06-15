@@ -1,0 +1,2 @@
+RETICULATE_PYTHON =.venv/bin/python
+RETICULATE_PYTHON=.venv/bin/python
