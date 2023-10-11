@@ -131,3 +131,9 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Additional ignores
+
+## Large Datasets so should ignore data/
+data/
+run_conversion.sh
